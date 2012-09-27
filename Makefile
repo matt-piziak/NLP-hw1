@@ -1,7 +1,7 @@
 NAME = ne_tagger
 
 $(NAME): $(NAME).hs
-	ghc -o $@ $^
+	ghc -O -o $@ $^
 
 .PHONY: clean test edit
 
@@ -13,3 +13,6 @@ test:
 
 edit:
 	emacs $(NAME).hs &
+
+makedit:
+	emacs Makefile &

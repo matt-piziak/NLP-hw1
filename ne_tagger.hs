@@ -7,21 +7,40 @@ import Data.Maybe
 main = do
   args <- getArgs
   file <- readFile $ head args
-  putStrLn $ process file
+  let wordtags = getWordtags file
+  mapM print $ process wordtags
   
---tries looking up an example
-process file = fromMaybe "" $ lookup example $ wordMap file
-               where example = ("these", "O")
+--gets a list of WORDTAG entries from the file
+getWordtags file = filter isWordtag $ lines file
+                   where isWordtag = isInfixOf "WORDTAG"
+
+process wordtags = [totalWordCount word wordtags | word <- wordList wordtags]
                
---creates a map of words to counts
-wordMap file = map rowToTuple $ map words $ getWordtags file
-               
+wordList wordtags = map getWord $ wordtags        
+                   where getWord line = (words line)!!3
+
+totalWordCount word wordtags = sum $ map countOfTag tags
+  where countOfTag tag = wordtagCount word tag wordtags
+                     
+wordtagCount :: String -> String -> [String] -> Int
+wordtagCount word tag wordtags = read 
+                                 $ fromMaybe "0" 
+                                 $ lookup (word, tag) 
+                                 $ wordtagMap wordtags
+                             
+wordtagMap :: [String] -> [((String, String), String)]
+wordtagMap wordtags = map rowToTuple $ map words $ wordtags
+
 --creates a tuple ((word, tag), count) from a WORDTAG entry
 rowToTuple wordtag = ((word, tag), count)
                      where word = wordtag!!3
                            tag = wordtag!!2
                            count = head wordtag
+                         
+tags = [prefix++baseTag | prefix <- prefixes, baseTag <- baseTags]++other
 
---gets a list of WORDTAG entries from the file
-getWordtags file = filter isWordtag $ lines file
-                   where isWordtag = isInfixOf "WORDTAG"
+prefixes = ["I-", "B-"]
+
+baseTags = ["PER", "ORG", "LOC", "MISC"]
+
+other = ["O"]
