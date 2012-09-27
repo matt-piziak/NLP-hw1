@@ -8,37 +8,23 @@ import qualified Data.Map as Map
 main = do
   args <- getArgs
   file <- readFile $ head args
-  let wordtags = getWordtags file
-  print $ process wordtags
+  let wordtagLines = getWordtags file
+  let onegramLines = getOneGrams file
+  let wordtags = Map.fromList $ map lineToWordtag $ getWordtags file
+  print $ wordtagCount "these" "O" wordtags
   
---gets a list of WORDTAG entries from the file
-getWordtags file = filter isWordtag $ lines file
-                   where isWordtag = isInfixOf "WORDTAG"
-
-process wordtags = emit "these" "O" wordtags
-                   
-emit word tag wordtags = x / y
-  where x = fromIntegral $ wordtagCount word tag wordtags
-        y = fromIntegral $ totalWordCount word wordtags
-                   
-wordList wordtags = map getWord $ wordtags
-                   where getWord line = (words line)!!3
-
-totalWordCount word wordtags = sum $ map countOfTag tags
-  where countOfTag tag = wordtagCount word tag wordtags
-                     
-wordtagCount word tag wordtags = read 
-                                 $ fromMaybe "0" 
-                                 $ Map.lookup (word, tag) 
-                                 $ wordtagMap wordtags
-                             
-wordtagMap wordtags = Map.fromList $ map rowToTuple $ map words $ wordtags
+getWordtags :: String -> [[String]]
+getWordtags file = map words $ filter (isInfixOf "WORDTAG")$ lines file
+        
+getOneGrams file = map words $ filter (isInfixOf "1-GRAM") $ lines file
+                                  
+wordtagCount :: String -> String -> Map.Map (String, String) Int -> Int
+wordtagCount word tag wordtags = fromMaybe 0 $ Map.lookup (word, tag) wordtags
 
 --creates a tuple ((word, tag), count) from a WORDTAG entry
-rowToTuple wordtag = ((word, tag), count)
-                     where word = wordtag!!3
-                           tag = wordtag!!2
-                           count = head wordtag
+lineToWordtag :: [String] -> ((String, String), Int)
+lineToWordtag line@(count:marker:tag:word:_) = ((word, tag), read count)
+  
                          
 tags = [prefix++baseTag | prefix <- prefixes, baseTag <- baseTags]++other
 
@@ -46,4 +32,4 @@ prefixes = ["I-", "B-"]
 
 baseTags = ["PER", "ORG", "LOC", "MISC"]
 
-other = ["O"]
+other = ["O", "STOP", "*"]

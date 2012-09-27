@@ -6,9 +6,9 @@ $(NAME): $(NAME).hs
 .PHONY: clean test edit
 
 clean:
-	rm -f $(NAME) *.o *.hi *~
+	rm -f $(NAME) *.o *.hi *~ *#
 
-test:
+test: $(NAME)
 	./$(NAME) ner.counts
 
 edit:
